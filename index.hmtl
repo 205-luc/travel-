@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✈️旅行记录簿｜行程规划攻略</title>
+<!-- 更换国内可用CDN，修复github.io国内访问白屏 -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root {
+    --main-color:#2460A7;
+    --light-blue:#E8F0FA;
+    --border:#D1DCEB;
+    --text-dark:#222831;
+    --text-gray:#556270;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,"Microsoft Yahei",sans-serif}
+body{background:#f8fafc;color:var(--text-dark);padding:16px;max-width:1260px;margin:0 auto}
+header{text-align:center;margin-bottom:24px;padding:10px}
+header h1{color:var(--main-color);font-size:26px;margin-bottom:6px}
+header p{color:var(--text-gray);font-size:14px}
+
+/* 标签栏 */
+.tab-bar{display:flex;gap:8px;margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.tab-btn{padding:11px 20px;border:none;background:var(--light-blue);border-radius:8px 8px 0 0;cursor:pointer;font-size:15px;color:var(--text-gray);transition:0.2s}
+.tab-btn.active{background:var(--main-color);color:#fff}
+.tab-content{display:none}
+.tab-content.show{display:block}
+
+/* 通用容器 */
+.box{background:#fff;border-radius:10px;padding:22px;border:1px solid var(--border);margin-bottom:20px}
+.box h3{color:var(--main-color);margin-bottom:16px;font-size:18px;border-left:4px solid var(--main-color);padding-left:10px}
+h4{margin:14px 0 8px;color:#333}
+input,textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;margin:6px 0;background:#fff}
+textarea{min-height:75px;resize:vertical}
+button{cursor:pointer;padding:9px 16px;border-radius:6px;border:none;font-size:14px;transition:0.2s}
+.btn-primary{background:var(--main-color);color:#fff}
+.btn-primary:hover{background:#1c4d87}
+.btn-danger{background:#dd4444;color:#fff}
+.btn-light{background:var(--light-blue);color:var(--main-color)}
+.btn-sm{padding:5px 10px;font-size:13px}
+.flex-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.flex-row input,.flex-row select{flex:1;min-width:140px}
+
+/* 图片上传 */
+.upload-area{border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;margin:12px 0;cursor:pointer;color:var(--text-gray)}
+.upload-area:hover{border-color:var(--main-color)}
+.img-preview{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.img-preview > div{position:relative}
+.img-preview img{width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer}
+.img-preview button{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:white;padding:1px 6px;font-size:12px}
+
+/* =========攻略行程条目【左右布局 + 拖拽】========= */
+.day-title{
+    background-color: var(--light-blue);
+    padding: 8px 14px;
+    border-radius:6px;
+    font-weight:bold;
+    font-size:17px;
+    margin:20px 0 10px;
+    color:var(--main-color);
+}
+.schedule-item{display:flex;gap:16px;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;align-items:flex-start;cursor:move;}
+.schedule-item:active{opacity:0.85;}
+.schedule-img{width:160px;height:130px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#f1f5f9}
+.schedule-img img{width:100%;height:100%;object-fit:cover;cursor:pointer}
+.schedule-info{flex:1}
+.schedule-title{font-weight:bold;font-size:16px;margin-bottom:6px;color:var(--main-color)}
+.schedule-row{display:flex;flex-wrap:wrap;gap:14px;font-size:14px;margin:4px 0;color:var(--text-gray)}
+.tag{background:var(--light-blue);padding:2px 8px;border-radius:4px;font-size:13px}
+.empty{text-align:center;padding:40px;color:#94a3b8}
+.spot-op-btn-group{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.plan-operation-bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.budget-total{
+    background:#fff3cd;
+    padding:10px 14px;
+    border-radius:8px;
+    margin:10px 0;
+    font-weight:bold;
+    color:#946600;
+}
+
+/* 弹窗样式 */
+.modal-mask{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:99;
+    padding:15px;
+}
+.modal-mask.show{display:flex}
+.modal-box{
+    width:100%;
+    max-width:640px;
+    background:#fff;
+    border-radius:10px;
+    padding:24px;
+    max-height:90vh;
+    overflow-y:auto;
+}
+
+/* 打卡相册样式 */
+.album-item{display:flex;gap:16px;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;flex-wrap:wrap}
+.album-img-group{display:flex;gap:8px;flex-wrap:wrap}
+.album-img-group img{width:130px;height:130px;object-fit:cover;border-radius:6px;cursor:pointer}
+.album-text{flex:1;min-width:260px}
+
+/* 图片全屏预览弹窗 */
+.img-viewer{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:100}
+.img-viewer.show{display:flex}
+.img-viewer img{max-width:92%;max-height:92%}
+
+/* 导出截图容器（隐藏） */
+#export-snapshot{
+    width:800px;
+    padding:20px;
+    background:#fff;
+    display:none;
+}
+
+@media(max-width:720px){
+    .schedule-item{flex-direction:column}
+    .schedule-img{width:100%;height:180px}
+    .tab-btn{padding:9px 12px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>✈️ 旅行记录簿</h1>
+  <p>想去清单｜行程攻略｜旅途打卡相册</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="want">📍 我想去</button>
+  <button class="tab-btn" data-tab="plan">📝 旅行攻略</button>
+  <button class="tab-btn" data-tab="checkin">📸 旅行打卡</button>
+</div>
+
+<!-- ========== 板块1：我想去 ========== -->
+<div class="tab-content show" id="tab-want">
+  <div class="box">
+    <h3>新增想去目的地</h3>
+    <input type="text" id="want-name" placeholder="地点名称">
+    <textarea id="want-desc" placeholder="简单备注、期待事项"></textarea>
+    <div class="upload-area" onclick="document.getElementById('want-file').click()">
+      点击上传图片
+      <input type="file" id="want-file" accept="image/*" multiple hidden>
+    </div>
+    <div class="img-preview" id="want-preview"></div>
+    <button class="btn-primary" onclick="addWant()">添加到想去清单</button>
+  </div>
+  <div class="box">
+    <h3>想去清单</h3>
+    <div id="want-list"></div>
+  </div>
+</div>
+
+<!-- ========== 板块2：旅行攻略【完整版】 ========== -->
+<div class="tab-content" id="tab-plan">
+  <div class="box">
+    <h3>新建行程攻略</h3>
+    <input type="text" id="plan-title" placeholder="行程名称，例如：重庆三日游">
+    <div class="flex-row">
+      <input type="number" id="plan-days" placeholder="出行天数" min="1" value="3">
+    </div>
+
+    <h4>①交通路线 & 住宿预算</h4>
+    <div class="flex-row">
+      <input type="text" id="plan-traffic" placeholder="交通路线">
+      <input type="number" id="plan-traffic-cost" placeholder="路费预算">
+    </div>
+    <div class="flex-row">
+      <input type="text" id="plan-hotel" placeholder="住宿方案">
+      <input type="number" id="plan-hotel-cost" placeholder="住宿费预算">
+    </div>
+
+    <h4>②添加当日打卡景点</h4>
+    <div class="flex-row">
+      <select id="spot-day">
+        <option value="1">第1天</option>
+        <option value="2">第2天</option>
+        <option value="3">第3天</option>
+        <option value="4">第4天</option>
+        <option value="5">第5天</option>
+        <option value="6">第6天</option>
+        <option value="7">第7天</option>
+      </select>
+      <input type="text" id="spot-name" placeholder="景点名称">
+      <select id="spot-ticket">
+        <option value="不需要门票">不需要门票</option>
+        <option value="需要门票">需要门票</option>
+      </select>
+      <select id="spot-book">
+        <option value="无需预约">无需预约</option>
+        <option value="需要提前预约">需要提前预约</option>
+      </select>
+    </div>
+    <input type="text" id="spot-time" placeholder="开放时间">
+    <textarea id="spot-note" placeholder="景点详情、游玩攻略"></textarea>
+
+    <div class="upload-area" onclick="document.getElementById('spot-file').click()">
+      上传景点图片（左侧展示）
+      <input type="file" id="spot-file" accept="image/*" hidden>
+    </div>
+    <div class="img-preview" id="spot-preview"></div>
+    <button class="btn-light" onclick="addSpotItem()">添加景点到行程</button>
+
+    <h4>③打卡店铺</h4>
+    <div class="flex-row">
+      <input type="text" id="shop-name" placeholder="店铺名称">
+      <input type="number" id="shop-price" placeholder="人均消费">
+    </div>
+    <textarea id="shop-note" placeholder="店铺点评/推荐菜品"></textarea>
+    <button class="btn-light" onclick="addShop()">添加店铺</button>
+
+    <br><br>
+    <button class="btn-primary" onclick="savePlan()">✅ 保存整套行程攻略</button>
+  </div>
+  <div class="box">
+    <h3>已保存行程攻略</h3>
+    <div id="plan-list"></div>
+  </div>
+</div>
+
+<!-- ========== 景点编辑弹窗 ========== -->
+<div class="modal-mask" id="editSpotModal">
+  <div class="modal-box">
+    <h3>编辑景点信息</h3>
+    <input type="hidden" id="edit-plan-index">
+    <input type="hidden" id="edit-spot-index">
+    <div class="flex-row">
+      <select id="edit-spot-day">
+        <option value="1">第1天</option>
+        <option value="2">第2天</option>
+        <option value="3">第3天</option>
+        <option value="4">第4天</option>
+        <option value="5">第5天</option>
+        <option value="6">第6天</option>
+        <option value="7">第7天</option>
+      </select>
+      <input type="text" id="edit-spot-name" placeholder="景点名称">
+      <select id="edit-spot-ticket">
+        <option value="不需要门票">不需要门票</option>
+        <option value="需要门票">需要门票</option>
+      </select>
+      <select id="edit-spot-book">
+        <option value="无需预约">无需预约</option>
+        <option value="需要提前预约">需要提前预约</option>
+      </select>
+    </div>
+    <input type="text" id="edit-spot-time" placeholder="开放时间">
+    <textarea id="edit-spot-note" placeholder="景点详情、游玩攻略"></textarea>
+    <div class="upload-area" onclick="document.getElementById('edit-spot-file').click()">
+      重新上传景点图片
+      <input type="file" id="edit-spot-file" accept="image/*" hidden>
+    </div>
+    <div class="img-preview" id="edit-spot-preview"></div>
+    <div class="flex-row" style="margin-top:12px">
+      <button class="btn-primary" onclick="submitEditSpot()">确认修改</button>
+      <button class="btn-light" onclick="closeEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 整套行程编辑弹窗 ========== -->
+<div class="modal-mask" id="editPlanModal">
+  <div class="modal-box">
+    <h3>编辑整套行程基础信息</h3>
+    <input type="hidden" id="edit-plan-id">
+    <input type="text" id="edit-plan-title" placeholder="行程名称">
+    <input type="number" id="edit-plan-days" min="1" placeholder="出行天数">
+    <h4>交通 & 住宿</h4>
+    <div class="flex-row">
+      <input type="text" id="edit-plan-traffic" placeholder="交通路线">
+      <input type="number" id="edit-plan-traffic-cost" placeholder="路费预算">
+    </div>
+    <div class="flex-row">
+      <input type="text" id="edit-plan-hotel" placeholder="住宿方案">
+      <input type="number" id="edit-plan-hotel-cost" placeholder="住宿预算">
+    </div>
+    <div class="flex-row" style="margin-top:12px">
+      <button class="btn-primary" onclick="submitEditPlan()">确认修改</button>
+      <button class="btn-light" onclick="closePlanEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 板块3：旅行打卡（相册模式） ========== -->
+<div class="tab-content" id="tab-checkin">
+  <div class="box">
+    <h3>新增旅行打卡记录</h3>
+    <div class="flex-row">
+      <input type="date" id="check-date">
+      <label style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="check-finish">✅已完成打卡
+      </label>
+    </div>
+    <textarea id="check-text" placeholder="旅途文字记录、心情、见闻"></textarea>
+    <div class="upload-area" onclick="document.getElementById('check-file').click()">
+      上传照片，形成相册
+      <input type="file" id="check-file" accept="image/*" multiple hidden>
+    </div>
+    <div class="img-preview" id="check-preview"></div>
+    <button class="btn-primary" onclick="addCheckin()">保存打卡相册</button>
+  </div>
+  <div class="box">
+    <h3>打卡相册</h3>
+    <div id="checkin-list"></div>
+  </div>
+</div>
+
+<!-- 图片全屏预览 -->
+<div class="img-viewer" id="imgViewer" onclick="closeViewer()">
+  <img id="viewerImg">
+</div>
+
+<!-- 导出截图容器 -->
+<div id="export-snapshot"></div>
+
+<script>
+//全局数据
+let data = JSON.parse(localStorage.getItem('travelData')) || {
+  wantList:[],
+  planList:[],
+  checkinList:[]
+};
+let tempWantImgs = [];
+let tempPlanSpots = []; //当前新建攻略临时景点数组
+let tempShops = [];
+let tempSpotImg = "";
+let tempEditSpotImg = "";
+
+//标签切换
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('show'));
+    btn.classList.add('active');
+    const tabId = btn.dataset.tab;
+    document.getElementById('tab-'+tabId).classList.add('show');
+  }
+})
+
+//====图片通用处理====
+function bindSingleImage(fileId, previewId, callback=null){
+  const input = document.getElementById(fileId);
+  input.onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      if(callback) callback(ev.target.result);
+      document.getElementById(previewId).innerHTML = `
+        <div><img src="${ev.target.result}" onclick="openViewer('${ev.target.result}')"><button onclick="removeSinglePreview('${previewId}',callback)">×</button></div>
+      `
+    }
+    reader.readAsDataURL(file);
+  }
+}
+function removeSinglePreview(wrapId,callback){
+  if(callback) callback("");
+  document.getElementById(wrapId).innerHTML = "";
+}
+
+bindSingleImage('spot-file','spot-preview',(res)=>tempSpotImg=res);
+bindSingleImage('edit-spot-file','edit-spot-preview',(res)=>tempEditSpotImg=res);
+
+function bindMultiFile(fileId, previewId, tempArr){
+  const input = document.getElementById(fileId);
+  input.onchange = e=>{
+    const files = e.target.files;
+    for(let f of files){
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        tempArr.push(ev.target.result);
+        renderMultiPreview(previewId,tempArr);
+      }
+      reader.readAsDataURL(f);
+    }
+  }
+}
+function renderMultiPreview(wrapId,imgArr){
+  const wrap = document.getElementById(wrapId);
+  wrap.innerHTML = "";
+  imgArr.forEach((src,i)=>{
+    const div = document.createElement("div");
+    div.innerHTML = `<img src="${src}" onclick="openViewer('${src}')">
+    <button onclick="event.stopPropagation();delImg(${i},'${wrapId}')">×</button>`
+    wrap.appendChild(div);
+  })
+}
+function delImg(index,wrapId){
+  let arr;
+  if(wrapId=="want-preview") arr=tempWantImgs;
+  else arr=tempCheckImgs;
+  arr.splice(index,1);
+  renderMultiPreview(wrapId,arr);
+}
+function openViewer(src){
+  document.getElementById('viewerImg').src=src;
+  document.getElementById('imgViewer').classList.add('show');
+}
+function closeViewer(){
+  document.getElementById('imgViewer').classList.remove('show');
+}
+bindMultiFile('want-file','want-preview',tempWantImgs);
+bindMultiFile('check-file','check-preview',tempCheckImgs);
+
+//============弹窗：景点编辑============
+function openEditSpotModal(planIdx,spotIdx){
+  const plan = data.planList[planIdx];
+  const spot = plan.spots[spotIdx];
+  document.getElementById("edit-plan-index").value = planIdx;
+  document.getElementById("edit-spot-index").value = spotIdx;
+
+  document.getElementById("edit-spot-day").value = spot.day || 1;
+  document.getElementById("edit-spot-name").value = spot.name;
+  document.getElementById("edit-spot-ticket").value = spot.ticket;
+  document.getElementById("edit-spot-book").value = spot.book;
+  document.getElementById("edit-spot-time").value = spot.time;
+  document.getElementById("edit-spot-note").value = spot.note;
+  tempEditSpotImg = spot.img || "";
+
+  const previewWrap = document.getElementById("edit-spot-preview");
+  previewWrap.innerHTML = tempEditSpotImg ?
+  `<div><img src="${tempEditSpotImg}" onclick="openViewer('${tempEditSpotImg}')"><button onclick="removeSinglePreview('edit-spot-preview',(r)=>tempEditSpotImg=r)">×</button></div>`:"";
+
+  document.getElementById("editSpotModal").classList.add("show");
+}
+function closeEditModal(){
+  document.getElementById("editSpotModal").classList.remove("show");
+}
+function submitEditSpot(){
+  const pIdx = Number(document.getElementById("edit-plan-index").value);
+  const sIdx = Number(document.getElementById("edit-spot-index").value);
+  const spot = data.planList[pIdx].spots[sIdx];
+
+  spot.day = Number(document.getElementById("edit-spot-day").value);
+  spot.name = document.getElementById("edit-spot-name").value.trim();
+  spot.ticket = document.getElementById("edit-spot-ticket").value;
+  spot.book = document.getElementById("edit-spot-book").value;
+  spot.time = document.getElementById("edit-spot-time").value.trim();
+  spot.note = document.getElementById("edit-spot-note").value.trim();
+  if(tempEditSpotImg) spot.img = tempEditSpotImg;
+
+  saveData();
+  renderPlan();
+  closeEditModal();
+}
+
+// =========整套行程编辑弹窗
+function openEditPlanModal(planIndex){
+  const plan = data.planList[planIndex];
+  document.getElementById("edit-plan-id").value = planIndex;
+  document.getElementById("edit-plan-title").value = plan.title;
+  document.getElementById("edit-plan-days").value = plan.days;
+  document.getElementById("edit-plan-traffic").value = plan.traffic || "";
+  document.getElementById("edit-plan-traffic-cost").value = plan.trafficCost || "";
+  document.getElementById("edit-plan-hotel").value = plan.hotel || "";
+  document.getElementById("edit-plan-hotel-cost").value = plan.hotelCost || "";
+  document.getElementById("editPlanModal").classList.add("show");
+}
+function closePlanEditModal(){
+  document.getElementById("editPlanModal").classList.remove("show");
+}
+function submitEditPlan(){
+  const idx = Number(document.getElementById("edit-plan-id").value);
+  const p = data.planList[idx];
+  p.title = document.getElementById("edit-plan-title").value.trim();
+  p.days = document.getElementById("edit-plan-days").value;
+  p.traffic = document.getElementById("edit-plan-traffic").value.trim();
+  p.trafficCost = document.getElementById("edit-plan-traffic-cost").value;
+  p.hotel = document.getElementById("edit-plan-hotel").value.trim();
+  p.hotelCost = document.getElementById("edit-plan-hotel-cost").value;
+  saveData();
+  renderPlan();
+  closePlanEditModal();
+}
+
+//=============1、我想去模块=============
+function addWant(){
+  const name = document.getElementById('want-name').value.trim();
+  const desc = document.getElementById('want-desc').value.trim();
+  if(!name){alert("请填写地点名称");return}
+  data.wantList.push({
+    name,desc,imgs:[...tempWantImgs]
+  })
+  saveData();
+  resetWant();
+  renderWant();
+}
+function resetWant(){
+  document.getElementById('want-name').value='';
+  document.getElementById('want-desc').value='';
+  tempWantImgs=[];
+  renderMultiPreview("want-preview",tempWantImgs);
+}
+function renderWant(){
+  const wrap = document.getElementById("want-list");
+  if(data.wantList.length===0){wrap.innerHTML='<div class="empty">暂无想去地点</div>';return}
+  wrap.innerHTML="";
+  data.wantList.forEach((item,idx)=>{
+    let imgHtml = item.imgs.map(s=>`<img src="${s}" onclick="openViewer('${s}')" style="width:90px;height:90px;object-fit:cover;border-radius:6px;margin:2px">`).join('');
+    const div = document.createElement('div');
+    div.className="schedule-item";
+    div.innerHTML=`
+    <div class="schedule-img">${item.imgs[0]?`<img src="${item.imgs[0]}">`:"<div style='height:100%;display:grid;place-items:center;color:#999'>暂无图片</div>"}</div>
+    <div class="schedule-info">
+      <div class="schedule-title">${item.name}</div>
+      <div class="schedule-row">${item.desc||"无备注信息"}</div>
+      <div>${imgHtml}</div>
+      <div style="margin-top:10px"><button class="btn-danger" onclick="delWant(${idx})">删除</button></div>
+    </div>`
+    wrap.appendChild(div);
+  })
+}
+function delWant(i){
+  data.wantList.splice(i,1);saveData();renderWant();
+}
+
+//=============2、旅行攻略模块【核心：分组、拖拽、导出、预算】=============
+function addSpotItem(){
+  const name = document.getElementById('spot-name').value.trim();
+  if(!name){alert("填写景点名称！");return;}
+  tempPlanSpots.push({
+    day: Number(document.getElementById("spot-day").value),
+    name,
+    ticket:document.getElementById('spot-ticket').value,
+    book:document.getElementById('spot-book').value,
+    time:document.getElementById('spot-time').value,
+    note:document.getElementById('spot-note').value.trim(),
+    img:tempSpotImg
+  })
+  //清空输入
+  document.getElementById('spot-name').value="";
+  document.getElementById('spot-time').value="";
+  document.getElementById('spot-note').value="";
+  removeSinglePreview("spot-preview",(res)=>tempSpotImg=res);
+  alert("✅景点已添加到当前行程");
+}
+function addShop(){
+  const name = document.getElementById('shop-name').value.trim();
+  if(!name) return alert("填写店铺名称");
+  tempShops.push({
+    name,
+    price:document.getElementById('shop-price').value,
+    note:document.getElementById('shop-note').value.trim()
+  })
+  document.getElementById('shop-name').value='';
+  document.getElementById('shop-price').value='';
+  document.getElementById('shop-note').value='';
+  alert("店铺添加成功");
+}
+function savePlan(){
+  const title = document.getElementById('plan-title').value.trim();
+  const days = document.getElementById('plan-days').value;
+  if(!title){alert("请填写行程名称");return}
+  data.planList.push({
+    title,
+    days,
+    traffic:document.getElementById('plan-traffic').value.trim(),
+    trafficCost:document.getElementById('plan-traffic-cost').value,
+    hotel:document.getElementById('plan-hotel').value.trim(),
+    hotelCost:document.getElementById('plan-hotel-cost').value,
+    spots:[...tempPlanSpots],
+    shops:[...tempShops]
+  })
+  saveData();
+  resetPlanInput();
+  renderPlan();
+}
+function resetPlanInput(){
+  document.getElementById('plan-title').value='';
+  document.getElementById('plan-days').value=3;
+  document.getElementById('plan-traffic').value='';
+  document.getElementById('plan-traffic-cost').value='';
+  document.getElementById('plan-hotel').value='';
+  document.getElementById('plan-hotel-cost').value='';
+  tempPlanSpots=[];
+  tempShops=[];
+  removeSinglePreview("spot-preview",(res)=>tempSpotImg=res);
+}
+
+//渲染攻略【按日期分组、拖拽】
+let dragFromPlanIndex = null;
+let dragFromSpotIndex = null;
+function renderPlan(){
+  const wrap = document.getElementById("plan-list");
+  if(data.planList.length===0){wrap.innerHTML='<div class="empty">暂无行程攻略</div>';return}
+  wrap.innerHTML="";
+  data.planList.forEach((plan,pIndex)=>{
+    const trafficCost = Number(plan.trafficCost||0);
+    const hotelCost = Number(plan.hotelCost||0);
+    const totalBudget = trafficCost + hotelCost;
+
+    let html = `<div data-plan-index="${pIndex}" style="border-bottom:2px solid var(--border);padding-bottom:16px;margin-bottom:16px">
+      <h4 style="font-size:19px;color:var(--main-color)">${plan.title}（${plan.days}日行程）</h4>
+      <div class="budget-total">💰预算汇总：路费${trafficCost}元 + 住宿${hotelCost}元 = 合计${totalBudget}元</div>
+      <p style="margin:6px 0">🚗交通：${plan.traffic||"无"}｜路费预算：${plan.trafficCost||0}</p>
+      <p style="margin:6px 0">🏨住宿：${plan.hotel||"无"}｜住宿费预算：${plan.hotelCost||0}</p>
+      <div class="plan-operation-bar">
+        <button class="btn-sm btn-light" onclick="openEditPlanModal(${pIndex})">✏️编辑行程基础信息</button>
+        <button class="btn-sm btn-light" onclick="exportPlanText(${pIndex})">📄导出文本攻略</button>
+        <button class="btn-sm btn-light" onclick="exportPlanImage(${pIndex})">🖼导出攻略图片</button>
+        <button class="btn-sm btn-danger" onclick="delPlan(${pIndex})">🗑删除整套行程</button>
+      </div>
+      <p style="margin:8px 0;font-weight:bold">📍行程景点（拖动条目调整顺序）：</p>`;
+
+    //按天数分组排序
+    const group = {};
+    plan.spots.forEach((s,idx)=>{
+      const d = s.day || 1;
+      if(!group[d]) group[d]=[];
+      group[d].push({spot:s,originIndex:idx});
+    })
+    const dayList = Object.keys(group).sort((a,b)=>a-b);
+
+    for(const day of dayList){
+      html += `<div class="day-title">第${day}天</div>`;
+      group[day].forEach((item)=>{
+        const spot = item.spot;
+        const realSpotIndex = item.originIndex;
+        html += `
+        <div class="schedule-item" draggable="true" data-plan="${pIndex}" data-spot="${realSpotIndex}"
+        ondragstart="handleDragStart(event,${pIndex},${realSpotIndex})"
+        ondragover="event.preventDefault()"
+        ondrop="handleDrop(event,${pIndex},${realSpotIndex})">
+          <div class="schedule-img">
+            ${spot.img ? `<img src="${spot.img}" onclick="openViewer('${spot.img}')">`
+            : `<div style='height:100%;display:grid;place-items:center;color:#999'>暂无图片</div>`}
+          </div>
+          <div class="schedule-info">
+            <div class="schedule-title">${spot.name}</div>
+            <div class="schedule-row">
+              <span class="tag">🎫${spot.ticket}</span>
+              <span class="tag">📅开放：${spot.time||"未填写"}</span>
+              <span class="tag">📌${spot.book}</span>
+            </div>
+            <div style="margin-top:6px;font-size:14px;line-height:1.6">${spot.note || "暂无游玩攻略"}</div>
+            <div class="spot-op-btn-group">
+              <button class="btn-sm btn-light" onclick="openEditSpotModal(${pIndex},${realSpotIndex})">✏️编辑景点</button>
+              <button class="btn-sm btn-danger" onclick="delSpot(${pIndex},${realSpotIndex})">🗑删除景点</button>
+            </div>
+          </div>
+        </div>`
+      })
+    }
+
+    //店铺列表
+    if(plan.shops.length>0){
+      html += `<p style="margin:10px 0 6px;font-weight:bold">🍴打卡店铺：</p>`
+      plan.shops.forEach(shop=>{
+        html += `<div style="padding:8px 12px;background:var(--light-blue);border-radius:6px;margin:6px 0">
+        ${shop.name}｜人均${shop.price}｜备注：${shop.note}
+        </div>`
+      })
+    }
+    html += `</div>`
+    wrap.innerHTML += html;
+  })
+}
+
+//拖拽排序
+function handleDragStart(e,pIdx,sIdx){
+  dragFromPlanIndex = pIdx;
+  dragFromSpotIndex = sIdx;
+}
+function handleDrop(e,toPlanIdx,toSpotIdx){
+  e.preventDefault();
+  if(dragFromPlanIndex !== toPlanIdx) return;
+  const list = data.planList[toPlanIdx].spots;
+  const item = list.splice(dragFromSpotIndex,1)[0];
+  list.splice(toSpotIdx,0,item);
+  saveData();
+  renderPlan();
+}
+
+//删除单个景点
+function delSpot(planIdx,spotIdx){
+  if(!confirm("确定删除该景点吗？")) return;
+  data.planList[planIdx].spots.splice(spotIdx,1);
+  saveData();
+  renderPlan();
+}
+function delPlan(idx){
+  if(confirm("确定删除这份行程攻略吗？")){
+    data.planList.splice(idx,1);saveData();renderPlan();
+  }
+}
+
+//导出文本攻略
+function exportPlanText(pIndex){
+  const plan = data.planList[pIndex];
+  let text = `【${plan.title}】${plan.days}日行程\n`;
+  text += `交通方案：${plan.traffic||"无"}\n路费预算：${plan.trafficCost||0}\n`;
+  text += `住宿方案：${plan.hotel||"无"}\n住宿预算：${plan.hotelCost||0}\n\n`;
+  const group = {};
+  plan.spots.forEach(s=>{
+    const d = s.day;
+    if(!group[d]) group[d]=[]; group[d].push(s);
+  })
+  Object.keys(group).sort((a,b)=>a-b).forEach(day=>{
+    text += `====第${day}天====\n`;
+    group[day].forEach(spot=>{
+      text += `📍${spot.name}\n门票：${spot.ticket}｜预约：${spot.book}｜开放时间：${spot.time||"无"}\n攻略：${spot.note||"无"}\n`
+    })
+    text += "\n";
+  })
+  if(plan.shops.length>0){
+    text += "====推荐店铺====\n";
+    plan.shops.forEach(sh=>{
+      text += `${sh.name}｜人均${sh.price}｜${sh.note}\n`
+    })
+  }
+  //复制剪贴板
+  navigator.clipboard.writeText(text).then(()=>{
+    alert("文本攻略已复制到剪贴板！直接粘贴保存");
+  })
+}
+
+//导出图片攻略
+async function exportPlanImage(pIndex){
+  // 增加容错：html2canvas加载失败时提示
+  if(typeof html2canvas === "undefined"){
+    alert("图片导出组件加载失败，网络不佳，暂时无法导出图片！");
+    return;
+  }
+  const plan = data.planList[pIndex];
+  const snapBox = document.getElementById("export-snapshot");
+  let html = `<h2>${plan.title}</h2>`;
+  html += `<p>出行${plan.days}天 | 路费${plan.trafficCost} | 住宿${plan.hotelCost}</p>`;
+  const group = {};
+  plan.spots.forEach(s=>{
+    if(!group[s.day]) group[s.day]=[]; group[s.day].push(s);
+  })
+  Object.keys(group).sort((a,b)=>a-b).forEach(d=>{
+    html += `<h3>第${d}天</h3>`;
+    group[d].forEach(sp=>{
+      html += `<p><strong>${sp.name}</strong> ${sp.ticket} ${sp.book} ${sp.time}<br>${sp.note}</p>`
+    })
+  })
+  snapBox.innerHTML = html;
+  snapBox.style.display = "block";
+  const canvas = await html2canvas(snapBox);
+  const url = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${plan.title}_行程攻略.png`;
+  a.click();
+  snapBox.style.display = "none";
+}
+
+//=============3、旅行打卡相册=============
+function addCheckin(){
+  const date = document.getElementById('check-date').value;
+  const text = document.getElementById('check-text').value.trim();
+  if(!date){alert("请选择打卡日期");return}
+  data.checkinList.push({
+    date,
+    finish:document.getElementById('check-finish').checked,
+    text,
+    imgs:[...tempCheckImgs]
+  })
+  saveData();
+  resetCheck();
+  renderCheckin();
+}
+function resetCheck(){
+  document.getElementById('check-date').value='';
+  document.getElementById('check-text').value='';
+  document.getElementById('check-finish').checked=false;
+  tempCheckImgs=[];
+  renderMultiPreview("check-preview",tempCheckImgs);
+}
+function renderCheckin(){
+  const wrap = document.getElementById("checkin-list");
+  if(data.checkinList.length===0){wrap.innerHTML='<div class="empty">暂无打卡记录</div>';return}
+  wrap.innerHTML="";
+  data.checkinList.forEach((item,idx)=>{
+    let imgHtml = item.imgs.map(s=>`<img src="${s}" onclick="openViewer('${s}')">`).join('');
+    const div = document.createElement('div');
+    div.className="album-item";
+    div.innerHTML=`
+      <div class="album-img-group">${imgHtml||"<span style='color:#999'>暂无照片</span>"}</div>
+      <div class="album-text">
+        <p><strong>📅${item.date}</strong> ${item.finish?"✅已打卡":"⏳待打卡"}</p>
+        <p style="margin-top:8px;white-space:pre-line;line-height:1.6">${item.text||"无文字记录"}</p>
+        <button class="btn-danger" style="margin-top:10px" onclick="delCheck(${idx})">删除</button>
+      </div>`
+    wrap.appendChild(div);
+  })
+}
+function delCheck(i){
+  data.checkinList.splice(i,1);saveData();renderCheckin();
+}
+
+//持久化
+function saveData(){
+  localStorage.setItem('travelData',JSON.stringify(data));
+}
+
+//初始化渲染
+renderWant();
+renderPlan();
+renderCheckin();
+</script>
+</body>
+</html>
